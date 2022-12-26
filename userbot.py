@@ -3,69 +3,52 @@
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon import TelegramClient, events
+from telethon.tl.functions.account import UpdateProfileRequest
+
+import datetime
+import asyncio
+import time
 
 from main import get_dataset
 
 # get this value from my.telegram.org
-api_id = 'API_ID'
+api_id = 1547242
 # get this value from my.telegram.org
-api_hash = 'your api hash'
+api_hash = 'fd0c71f41851a344864fd934033d3549'
 # you can get this value by running get_session_string.py
-stringSession = 'Your string session'
+stringSession = '1ApWapzMBuw0SnzPFAfVB86bYSAS6xxKkVGggydtC5DqKHCV6tU7LZpTC5wDF2p0er7TskR5K-CdgvFA4f_DvItys9oojzMUEFf7CIEMRwkBjWemabDds9lv0NZjSekQnhH-E-FnV7VM_-x_EFTVI-XKcKUcGuBk9l36csy8TSnyvNg3gbJmRwQ-Tpkkn50evrS-YeBJD4vuty8aMAripSWyGDmcMrjLUs3OTO6fnXwMH6KvIvz6Y5ETc1EUTsnDyVYU-d6HEuRNKXKKZ3_vJL0gGLG1Blvfg13Nsdjk38HTq8_9B5tOXgOw6iTsjemkL5OfVZTWA1O07-_ik0-SBhyVXKpn8VLU='
+
 # create a Telegram session and assign
 client = TelegramClient(StringSession(stringSession), api_id, api_hash)
 
-channel_id = 5891431451
 
-# -100 is for channel + channel_id
-dataset_channel_id = int('-100' + 'YOUR_CHANNEL_ID')
+motivational_quotes = [
+    'The best way to predict the future is to create it.',
+    'The best revenge is massive success.',
+    'The best way to get started is to quit talking and begin doing.',
+    'The distance between insanity and genius is measured only by success.',
+    'The secret of getting ahead is getting started.',
+]
+counter = 0
 
-# get url from message
-def get_url(message: str):
-    url_start_index = message.find('https://kun.uz')
-    for i in range(url_start_index, len(message)):
-        if message[i] == ' ' or message[i] == '\n':
-            return message[url_start_index:i]
-    return message[url_start_index:]
+async def change_bio():
+    global counter
+    try:
+        await client(UpdateProfileRequest(
+            about = motivational_quotes[counter]
+        ))
+    except Exception as e:
+        print(e)
+    print('Bio changed to: ', motivational_quotes[counter])
+    counter = (counter + 1) % 5
 
-# function to handle the new message
-@client.on(events.NewMessage)
-async def my_event_handler(event):
-    if event.sender_id == channel_id:
-        url = get_url(event.message.message)
-        print(url)
-        dataset, dictionary = get_dataset(url)
-        content = ''.join(dataset.iloc[0]['content'])
-        
-        # convert dictionary to string
-        dictionary_str = ''
-        for key, value in dictionary.items():
-            dictionary_str += f'{key}: {value}\n'
-
-        await client.send_message(dataset_channel_id, url)
-        
-        # try to send content
-        try:
-            await client.send_message(dataset_channel_id, "Content\n\n" + content)
-        except:
-            await client.send_message(dataset_channel_id, "Content\n\n" + content[:1024])
-            await client.send_message(dataset_channel_id, "...Content too long")
-
-        # try to send dictionary
-        try:
-            await client.send_message(dataset_channel_id, "Dictionary\n\n" + dictionary_str)
-        except:
-            await client.send_message(dataset_channel_id, "Dictionary\n\n" + dictionary_str[:1024])
-            await client.send_message(dataset_channel_id, "...Dictionary too long")
-
-        print('Message sent')
-
-        # append dataset to csv file
-        dataset.to_csv('dataset.csv', mode='a', header=False)
+    
 
 # start the client
 client.start()
 print('Client started')
-
+while True:
+    client.loop.run_until_complete(change_bio())
+    time.sleep(10)
 # run the client until manually stopped
 client.run_until_disconnected()
