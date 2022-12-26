@@ -9,7 +9,6 @@ import datetime
 import asyncio
 import time
 
-from main import get_dataset
 
 # get this value from my.telegram.org
 api_id = 1547242
